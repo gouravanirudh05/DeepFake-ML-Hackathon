@@ -1,0 +1,17 @@
+{
+  "id": "gouravanirudh/deepfake-clip-lora-train",
+  "title": "DeepFake CLIP LoRA Train",
+  "code_file": "deepfake-clip-lora-train.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "keywords": [],
+  "dataset_sources": ["gouravanirudh/deepfake-hackathon-data"],
+  "kernel_sources": [],
+  "competition_sources": [],
+  "model_sources": [],
+  "machine_shape": "NvidiaTeslaT4"
+}

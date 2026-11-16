@@ -218,3 +218,14 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ── hackathon project ──
+Data/
+outputs/
+*.pt
+*.pth
+predictions.csv
+kaggle/output/
+
+# large submission archive (exceeds GitHub 100MB limit)
+submission/*.zip

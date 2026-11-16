@@ -1,0 +1,19 @@
+{
+  "id": "gouravanirudh1105/deepfake-sota-backbones",
+  "title": "Deepfake Sota Backbones",
+  "code_file": "deepfake-sota-backbones.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "keywords": [],
+  "dataset_sources": [
+    "gouravanirudh1105/deepfake-hackathon-data"
+  ],
+  "kernel_sources": [],
+  "competition_sources": [],
+  "model_sources": [],
+  "machine_shape": "NvidiaTeslaT4"
+}

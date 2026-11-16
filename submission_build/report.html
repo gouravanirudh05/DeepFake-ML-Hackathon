@@ -1,0 +1,42 @@
+<html><head><meta charset="utf-8"><style>
+body{font-family:Arial,sans-serif;font-size:10pt;line-height:1.3}
+h1{font-size:15pt;margin:0 0 4pt}h2{font-size:11.5pt;margin:8pt 0 2pt;border-bottom:1px solid #999}
+table{border-collapse:collapse;font-size:9pt}td,th{border:1px solid #999;padding:2pt 5pt}
+p,ul{margin:2pt 0}
+</style></head><body>
+<h1>Deepfake Detection: Report</h1>
+<p>Deepfake ML Hackathon, IIIT Bangalore. Trained only on the provided 7,000 training images (no external datasets).</p>
+
+<h2>1. Architecture</h2>
+<p>A single <b>DINOv2 ViT-L/14 (with 4 register tokens)</b> foundation backbone, kept frozen and adapted with parameter-efficient LoRA, run at 224&times;224. It was the best of the five backbones we compared (CLIP, DINOv2, DINOv3, PE-Core; see table).
+Following RINE (ECCV 2024), the detector reads the CLS token after blocks 3, 7, 11, 15, 19 and 23 (as listed in the training config as <i>auto</i>), applies a LayerNorm to each, concatenates them and feeds a dropout + linear head that outputs one logit.
+Mid-level layers keep the low-level blending/texture traces that the last layer discards.
+LoRA (rank 16, alpha 32) is applied to all linear layers; the backbone stays frozen. After training the adapters are merged into the weights, so inference is a plain timm ViT.
+The final score is the logit averaged over the image and its horizontal flip (TTA), passed through a sigmoid; this is the <i>confidence</i> = P(Fake).
+The label uses a threshold of 0.5433, chosen by Youden's J on out-of-fold predictions only, never on test data.
+Pretrained backbone checkpoints (public foundation models) were used for initialisation; no extra datasets were used.</p>
+
+<h2>2. Training and augmentations</h2>
+<ul>
+<li>Loss: BCE with label smoothing 0.05. AdamW (lr 3e-4 LoRA, 1e-3 head, wd 0.05), cosine schedule with 5% warmup, 5 epochs, batch 32, fp16 autocast, gradient checkpointing.</li>
+<li><b>Label-noise handling:</b> a small-loss filter ignores the 8% highest-loss samples in each batch (ramped in over the first epoch). The data audit suggested about 8% confidently wrong labels.</li>
+<li><b>Geometric:</b> random horizontal flip (p=0.5), mild random-resized crop (scale 0.85&ndash;1.0, p=0.5).</li>
+<li><b>Robustness degradations</b> (random subset, random order): JPEG q 30&ndash;95, Gaussian blur &sigma; 0.2&ndash;2, Gaussian noise &sigma; 2&ndash;15, down/up-scaling 0.35&ndash;0.9, brightness/contrast/saturation jitter, grayscale, cutout 10&ndash;30%. These cover the likely hidden test variants.</li>
+<li>Self-blended pseudo-fakes (SBI) are implemented and were tested, but are <b>off</b> in the submitted model (no gain in our CLIP experiments).</li>
+</ul>
+
+<h2>3. Validation strategy</h2>
+<p>A data audit found near-duplicates by perceptual hash (295 near-duplicate pairs, 53 real/fake pairs of the same source photo). Duplicates were grouped, and a <b>StratifiedGroupKFold</b> (5 folds) keeps every group inside one fold, which prevents leakage between train and validation. All models were trained on folds 1&ndash;4 and validated on fold 0 (1,412 images). Besides clean AUC, each model is scored on 10 degraded variants (JPEG, blur, noise, downscale, colour, grayscale, cutout and a combined one) to measure robustness.</p>
+<table>
+<tr><th>Member</th><th>Adapter</th><th>Clean AUC</th><th>Degraded AUC (mean)</th></tr>
+<tr><td><b>DINOv2 ViT-L/14 (submitted)</b></td><td>LoRA</td><td><b>0.9153</b></td><td>0.9110</td></tr>
+<tr><td>DINOv3 ViT-L/16</td><td>LoRA</td><td>0.9139</td><td>0.9145</td></tr>
+<tr><td>PE-Core ViT-L/14</td><td>LoRA</td><td>0.9085</td><td>0.9054</td></tr>
+<tr><td>CLIP ViT-L/14</td><td>SVD subspace (Effort)</td><td>0.9059</td><td>0.9051</td></tr>
+
+</table>
+<p>Submitted model, out-of-fold: AUC 0.915, accuracy 0.888, F1 0.890 at the chosen threshold. Earlier CLIP ViT-L/14 LoRA runs reached 0.911&ndash;0.917 on the same fold; their weights were not saved, so they could not be submitted. Ensembling the backbones gave at most +0.0006 AUC, so we submit the single best model.</p>
+
+<h2>4. Limitations</h2>
+<p>The submitted model was trained on 80% of the data (fold 0 held out) for 5 epochs, so test performance should be similar to the 0.91&ndash;0.92 validation AUC. Differences between single models are within the noise of one fold (about &plusmn;0.01). Inference runs one ViT-L with flip TTA and is much faster on GPU than on CPU. <code>inference_script.py</code> is self-contained and needs no downloads; with a fixed device it reproduces <code>predictions.csv</code>.</p>
+</body></html>

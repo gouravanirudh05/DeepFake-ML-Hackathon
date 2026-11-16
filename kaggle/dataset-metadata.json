@@ -1,0 +1,6 @@
+{
+  "title": "DeepFake Hackathon Data",
+  "id": "gouravanirudh/deepfake-hackathon-data",
+  "licenses": [{"name": "unknown"}],
+  "subtitle": "Private copy of IIIT-B hackathon train/test faces with grouped folds"
+}
